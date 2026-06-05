@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>종합예제<간단한 장바구니></title>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <style>
+    .rowItem{
+        display: flex;
+        width: 80%;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .qty{
+        width: 50px;
+    }
+  </style>
+</head>
+<body>
+    <h2>간단한 장바구니</h2>
+    <div class="form">
+        <input class="newName" placeholder="상품명(예: 무선 키보드)" />
+        <input class="newPrice" placeholder="가격(숫자만)" />
+        <button class="addBtn">장바구니에 추가</button>
+    </div>
+    <div class="box" style="height: 150px; border: 1px solid black; overflow: auto;">
+        <div class="rowItem" data-price="19000">
+            <span class="name">무선 마우스</span>
+            <div>
+                <button class="minus">-</button>
+                <input class="qty" value="1" />
+                <button class="plus">+</button>
+            </div>
+            <span class="sub">19,000</span>
+        </div>
+        
+    </div>
+    </div>
+    <p>
+        배송 : 
+        <select id="ship">
+            <option value="0">무료배송</option>
+            <option value="3000">일반(3,000)</option>
+            <option value="8000">지역(8,000)</option>
+        </select>
+    </p>
+    <p>
+        총합계 : <strong id="total">0</strong>원
+    </p>
+
+
+<script>
+    $(function(){
+
+        //  + 버튼 구현( 수량:qty 증가)
+        $(".box").on("click", ".plus", function(){
+            const row = $(this).closest('.rowItem')
+            const qt = row.find(".qty");
+            qt.val( Math.max( 0,  Number(qt.val())+1 ) )
+            calcRow(row)
+            calcTotal()
+        })
+
+        // - 버튼 구현( 수량 :qty 감소)
+        $(".box").on("click", ".minus", function(){
+            const row = $(this).closest('.rowItem')
+            const qt = row.find(".qty");
+            qt.val( Math.max( 0,  Number(qt.val())-1 ) )
+            calcRow(row)
+            calcTotal()
+        })
+
+        // 한 행 합계 구현
+        function calcRow(row){
+            const price = Number( row.data("price") )
+            const qry = Math.max( 0, Number( row.find(".qty").val() ) ) 
+            // $(".sub").text( price * qry ) 엉터리 
+            row.find(".sub").text( (price*qry).toLocaleString() )
+        }
+
+        // 장바구니에 추가 구현
+        $(".addBtn").on("click", function(){
+            let na = $(".newName").val().trim()
+            let pr = $(".newPrice").val().trim()
+
+            if(!na){
+                alert("상품명 입력하세요");
+                return
+            }
+            if(!pr || isNaN(pr) ){
+                alert("가격을 숫자만 입력하세요")
+                return
+            }
+
+            let row = `  
+            <div class="rowItem" data-price="${Number(pr)}">
+                <span class="name">${na}</span>
+                <div>
+                    <button class="minus">-</button>
+                    <input class="qty" value="1" />
+                    <button class="plus">+</button>
+                </div>
+                <span class="sub">${ Number(pr).toLocaleString()}</span>
+            </div>
+            `
+
+            $(".box").append(row)
+            const newRow = $(".box .rowitem").list()
+            calcRow(row)
+            calcTotal()
+
+            $(".newName").val('')
+            $(".newPrice").val('')
+
+            $(".box").scrollTop($(".box").prop("scrollHeight"))
+        })
+
+        // 수량 입력( 문자입력 제한)
+        $(".box").on("keydown", ".qty", function(e){
+            let ok = (e.key ='0') && (e.key = '9')  
+            if(!ok) e.preventDefault()
+        })
+
+        // 배송비 구현
+         $(".ship").on("change", calcTotal)
+   
+
+
+        function calcTotal(){ 
+            let sum = 0
+            $(".box .rowItem").each(function(){
+                let sub = $(this).find(".sub").text().replace(/,/g, '')
+                sum +=  Number(sub)
+            })
+
+            sum += Number( $("#ship").val() || 0 )
+            $("#total").text( sum)
+        }
+
+        $(".box").on("dblclick", ".name", function(){
+            $(this).closest(".rowItem").remove()
+            calcTotal()
+        })
+    });
+</script>
+
+
+
+</body>
+</html>

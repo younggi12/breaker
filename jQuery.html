@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jQuery</title>
+</head>
+<body>
+      <!-- jQuery 기본(필수) 명령어
+        .text("값") :: 텍스트 읽기 / 쓰기
+        .html() :: html 읽기 / 쓰기
+        .val()  :: 요소의 값을 읽기 / 쓰기( input, select 등)
+        .attr() :: 속성(src, href, id 등) 읽기 / 쓰기 
+        .prop() :: dom 속성(checked, disablded 등) 읽기 / 쓰기 
+        .removeAttr(), .removeProp() :: 속성 제거 
+
+        
+        *** 클래스 제어 ***
+        .css() :: css 읽기 / 쓰기
+        .addClass() :: 클래스 추가
+        .removeClass() :: 클래스 제거
+        .toggleClass() :: 클래스 토글(있으면 제거, 없으면 추가)   
+        .hasClass() :: 특정 클래스 존재 여부 확인 (true / false)
+
+        *** 요소 제어 ***
+        .prepend() :: 요소 앞에 추가
+        .append()  :: 요소 뒤에 추가
+        .remove()  :: 요소 제거
+        .empty()   :: 요소 내부 내용 모두 제거
+        .clone()   :: 요소 복제
+
+        *** 이벤트 제어 ***
+        .click(), .change(), .hover(), .keyup(), 
+        .trigger() :: 이벤트 강제 실행
+        .dblclick() :: 더블 클릭 이벤트
+
+        *** 애니메이션 제어 ***
+        .show() :: 요소 보이기
+        .hide() :: 요소 숨기기
+        .toggle() :: 요소 보이기 / 숨기기 토글
+        .fadeIn(), .fadeOut() :: 서서히 나타났다 서서히 사라짐 
+        .slideDown(), .slideUp() :: 슬라이드로 나타났다 슬라이드로 사라짐
+        .animate() :: css 애니메이션
+        .stop() :: 애니메이션 중지
+
+        *******************
+        $(this).parent :: 내가 있는 곳(클린한 곳)에서 바로 위 부모를 선택(지칭)
+
+        $(this).closest(".box") :: 내가 있는 곳에서 (클린한 곳) 가장 가까운 부모 .box 찾기 
+
+        $(this).siblings(".box") :: 내가 있는 곳(클릭한 곳)에서 형제 .box 찾기
+
+        let boxs = $(this).siblings("box")
+        $(".box") -->
+</body>
+</html>

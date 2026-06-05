@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스크롤</title>
+    <script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous">
+    </script>
+</head>
+<body>
+
+    <div style="height: 200px; overflow: auto; border: 1px solid black;" id="scrollbox">
+        <p>내용1</p>
+        <p>내용2</p>
+        <p>내용3</p>
+        <p>내용4</p>
+        <p>내용5</p>
+        <p>내용6</p>
+        <p>내용7</p>
+        <p>내용8</p>
+        <p>내용9</p>
+        <p>내용10</p>    
+    </div>
+    <div id="scrollinfo"></div>
+
+    <script>
+        // .scroll() :: 화면 스크롤 감지 이벤트
+        $(function(){
+            $("#scrollbox").scroll(function(){
+                $("#scrollinfo").text(`현재 스크롤 위치 : ${$(this).scrollTop()}`)
+                
+            })
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous">
+    </script>
+
+    <style>
+        .item{
+            font-size: 17px;
+            font-weight: bold;
+            color: black;
+        }
+
+        .mid{
+            color: green;
+        }
+        .high{
+            color: red;
+        }
+        .low{
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+        * todo list 만들기 :: 할일 목록
+        1. input : 할일 입력값
+        2. button : 할일 추가 버튼
+        3. (keydown) : Enter키를 사용해도 할일 추가
+        4. 할일 목록 : 더블클릭하면 해당 항목 삭제
+        5. 목록 스크롤 위치 표시 
+        6. 우선순위 선택할수있는 select 요소 추가 예: 높음(빨강), 보통(초록색), 낮음(파랑) change를 활용하여 색상부터 변경
+    -->
+    <h2>TODO LIST</h2>
+    <div class="row">
+        <input id="todo" placeholder="할일을 입력하세요" type="text" />
+        <select id="step">
+            <option value="low">우선수위 낮음</option>
+            <option value="mid">우선수위 보통</option>
+            <option value="high">우선수위 높음</option>
+        </select>
+        <button id="add">추가</button>
+    </div>
+
+    <p style="margin-bottom: 30px;">미리보기 : <span class="preview"></span></p>
+
+    <div class="list" style="height: 200px; overflow: auto; border: 1px solid black;">할일 목록이 표시되는 자리</div>
+    <div class="sc">스크롤이 표시되는 자리 :</div>
+
+    <script>
+        $(document).ready(function(){ //모든 dom 요소들을 준비
+            const todo = $("#todo"), step = $("#step"), list = $(".list");
+
+            // 할일 추가 버튼 클릭 이벤트
+            function additem(){
+                let txt = todo.val().trim() // 입력값 가져오기
+                if(!txt) return 
+                let st = step.val() // 우선순위 가져오기
+                list.append(`<div class="item ${st}">
+                                ${txt}
+                            </div>`) // 할일 목록에 추가
+                todo.val("") // 입력창 초기화
+            }
+            
+            $("#add").on("click", function(){
+                additem()
+            })
+
+            // (todo.keydown(function(){})) : Enter키를 사용해도 할일 추가
+            todo.on("keydown", function(e){
+                if(e.key === "Enter"){
+                e.preventDefault() // 기본 동작 방지 (엔터키로 인한 폼 제출 방지)
+                    additem()
+                }
+            })
+
+            todo.on("keyup", function(){
+                $(".preview").text( $(this).val() )
+            })
+
+            step.on("change", function(){
+                let val = $(this).val() //mid, high, low
+                let col = ''
+                if (val === 'high'){
+                    col = 'red'
+                }else if(val === 'mid'){
+                    col = 'green'
+                }else if(val === 'low'){
+                    col = 'blue'
+                }
+
+                $(".preview").css("color", col)
+            })
+
+            list.on("dblclick", ".item", function(){
+                $(this).remove()
+            })
+
+            list.on("scroll", function(){
+                $(".sc").text( `스크롤 : ${ $(this).scrollTop()} px` )
+            })
+
+        })
+    </script>
+</body>
+</html>

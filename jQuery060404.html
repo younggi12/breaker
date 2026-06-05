@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>색상</title>
+    <script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous">
+    </script>
+</head>
+<body>
+
+    <select id="sel">
+        <option value="red">빨강</option>
+        <option value="gold">골드</option>
+        <option value="green">초록</option>
+    </select>
+    <p id="colortext">선택된 색상 : </p>
+
+
+    <script>
+        // .find() :: 자식 요소 탐색
+        // .find('option:selected')
+        $(function(){
+            $("#sel").change(function(){
+                let col = $(this).val()
+                let txt = $(this).find("option:selected").text()
+                $("#colortext").text(txt)
+                $("#colortext").css("color", col)
+            })
+        })
+    </script>
+</body>
+</html>
