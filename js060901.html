@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>드로잉 앱</title>
+    <link rel="stylesheet" href="./reset.css">
+
+    <style>
+        #container{
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #toolbar{
+            width: 100%;
+            height: 70px;
+            background-color: darkblue;
+            /* border-radius: 50%; */
+
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            /* gap: 20px; */
+        }
+
+        #toolbar div *{
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        #toolbar input{
+            color : black;
+         }
+
+        #bc{
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        #bc button{
+            border: none;
+            background-color: burlywood;
+            border-radius: 50%;
+            color: white;
+            /* font-weight: bold; */
+            padding: 5px 30px;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div id="container">
+        <div id="toolbar">
+            <div>
+                <label for="strokeColor">색상</label>
+                <input type="color" id="strokeColor" value="#000" />
+                
+
+                <label for="lwidth">선 굵기</label>
+                <input type="number" id="lwidth" value="2" min="1" max="50" /> 
+            </div>
+
+            <div id="bc">
+                <label for="fillColor">배경색</label>
+                <input type="color" id="fillColor" value="#000"/>
+
+                <button id="reset">지우기</button>
+                <button id="downfile">다운로드</button>
+            </div>
+
+        </div>
+
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.querySelector("canvas")
+        const toolbar = document.getElementById("toolbar")
+        const bc = document.getElementById("fillColor")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight - toolbar.offsetHeight; //  offsetHeight height값이 얼마든 뺴줌 
+
+        let canvasOffsetY = canvas.offsetTop;
+        let isDrawing = false;
+        let lineWidth = 2;
+
+        let bgColor = "#000000";
+
+        const ctx = canvas.getContext("2d")
+
+        ctx.strokeStyle = "#000000";
+
+        // 선색상, 선굵기 변경 이벤트 
+        toolbar.addEventListener("change", function(e){
+            if(e.target.id === "strokeColor"){
+                ctx.strokeStyle = e.target.value;
+            }
+            
+            if(e.target.id === 'lwidth'){
+                lineWidth = e.target.value;
+            }
+        })
+
+        canvas.addEventListener("mousedown", function(e){
+            isDrawing = true; 
+
+            ctx.beginPath();
+            ctx.moveTo(
+                e.clientX,
+                e.clientY - canvasOffsetY
+            );
+        })
+
+        canvas.addEventListener("mousemove", function(e){
+            if(!isDrawing) return
+            ctx.lineWidth = lineWidth
+            ctx.lineCap = 'round'
+            ctx.lineTo(e.clientX, e.clientY - canvasOffsetY )
+            ctx.stroke()
+        })
+
+        canvas.addEventListener("mouseup", function(e){
+            isDrawing = false
+            ctx.beginPath()
+        })
+
+        canvas.addEventListener("mouseleave", function(){
+                isDrawing = false;
+                ctx.beginPath();
+            })
+
+        // 지우기 이벤트 
+        toolbar.addEventListener("click", function(e){
+            if(e.target.id === "reset"){
+                ctx.clearRect(0, 0, canvas.width, canvas.height)
+            }
+        })
+
+        // 배경색 변경 
+        bc.addEventListener("change", function(){
+            bgColor = this.value;
+            canvas.style.backgroundColor = bgColor;
+        })
+
+        // 캔버스에 그린 그림 다운로드
+        toolbar.addEventListener("click", function(e){
+            // <a href="#"홈으로</a>
+            // <a href="img/as.jpg" download>다운</a>
+            if(e.target.id === "downfile"){
+
+            const tempCanvas = document.createElement("canvas");
+            const tempCtx = tempCanvas.getContext("2d");
+
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+
+            tempCtx.fillStyle = bgColor;
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+            tempCtx.drawImage(canvas, 0, 0);
+
+            let link = document.createElement("a");
+            link.download = "drawing.png";
+            link.href = tempCanvas.toDataURL("image/png");
+            link.click();
+            }
+        })
+    </script>
+</body>
+</html>
