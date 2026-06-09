@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <title>img fadeIn, fadeOut</title>
+    <link rel="stylesheet" href="./reset.css" >
+    <style>
+        .wrap{
+            width: 800px;
+            height: 400px;
+            overflow: hidden;
+            margin: 50px auto;
+            position: relative;
+        }
+
+        .slide{
+            width: 100%;
+            height: 100%;
+
+            position: absolute;
+            left:0;
+            top:0;
+
+            display: none;
+        }
+
+        .slide img{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide:first-child{
+            display: block;
+        }
+        /* 
+            first-chard :: 진~~짜 첫번째
+            first-of-type :: 같은 태그의 첫번째
+
+            nth-child(2)  :: 모든 태그 포함 2번째
+            nth-of-type(2) :: 같은 태그의 2번째
+        */
+        .arrow{
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.5);
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        .prev{left : 30px}
+        .next{right: 30px}
+
+        .dotWrap{
+            display: flex;
+            gap: 15px;
+
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            z-index: 10;
+            /* width: 200px;
+            height: 50px;
+            background-color: red; */
+        }
+        .dot{
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: white;
+            opacity: 0.5;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .dot.on{
+            opacity: 1;
+            transform: scale(1.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="slide">
+            <img src="./img/park2.jpg" alt="img1" />
+        </div>
+        <div class="slide">
+            <img src="./img/park3.jpg" alt="img2" />
+        </div>
+        <div class="slide">
+            <img src="./img/park4.webp" alt="img3" />
+        </div>        
+
+        <!-- 좌우버튼 -->
+         <button class="arrow prev">&lt;</button>
+         <button class="arrow next">&gt;</button>
+
+         <!-- 도트 -->
+          <div class="dotWrap">
+                <div class="dot on"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+          </div>
+    </div>
+
+    <script>
+        const slides = $(".slide");
+        const dots = $(".dot");
+
+        let index = 0;
+        let slideInterval;
+        // 공통적으로 쓰이는 슬라이드 이동 함수
+        function moveSlide(){
+            slides.stop(true, true).fadeOut(1000)
+            // stop() :: 현재 진행중인 애니 멈춤
+            // stop(true) :: 현재 대기중인 애니 삭제
+            // stop(true, true) :: 대기중인 애니 삭제, 현재 진행중인 애니 삭제
+            slides.eq(index).stop(true, true).fadeIn(1000)
+
+            dots.removeClass("on")
+            dots.eq(index).addClass("on")
+        }
+
+        function autoSlide(){
+            slideInterval = setInterval(function(){
+                    index++
+                    if( index >= slides.length ){
+                        index = 0;
+                    }
+                    moveSlide();
+
+                }, 3000)
+        }
+
+
+        // 다음버튼 클릭시
+        $(".next").on("click", function(){
+            clearInterval(slideInterval)
+             index++
+             if( index >= slides.length ){
+                index = 0;
+            }
+            moveSlide();
+            autoSlide()
+        })
+
+        // 이전버튼 클릭시
+        $(".prev").on("click", function(){
+            clearInterval(slideInterval)
+            index--
+            if(index < 0){
+                index = slides.length - 1 // slides.length:: 총 3개라서 3
+                // 2번재 -> 1번째 -> 0번째 -> 2번째 
+            }
+            moveSlide()
+            autoSlide()
+        })
+
+         dots.on("click", function(){
+            clearInterval(slideInterval)
+            index = $(this).index()
+            moveSlide()
+            autoSlide()
+         })
+    </script>
+</body>
+</html>

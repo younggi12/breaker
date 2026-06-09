@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gradient</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+
+    </style>
+
+</head>
+<body>
+    <!-- 
+        gradient
+    
+    
+    -->
+        <canvas width="800" height="600"></canvas>
+
+    <script>
+        let canvas = document.querySelector("canvas")
+        let ctx = canvas.getContext("2d")
+
+
+        // -----------------삼각형 
+        // ctx.beginPath()
+        // ctx.strokeStyle = "red"
+        // ctx.lineWidth = 4
+
+        // ctx.moveTo(150, 100) //(x, y) 첫번째 포인트
+        // ctx.lineTo(300, 350) //(x, y) 두번째 포인트
+        // ctx.lineTo(0, 350) // 세번째 포인트 
+        // ctx.closePath()
+        // ctx.stroke()
+
+        
+        // -----------------gradient
+        // createLinearGradient (x0, y0, x1, y1)
+        // let lineG = ctx.createLinearGradient(0, 0, 200, 0) 
+        // lineG.addColorStop(0.3, "pink")
+        // lineG.addColorStop(0.8, "yellow")
+        // lineG.addColorStop(1, "skyblue")
+
+        // lineG.addColorStop(0, "pink")
+        // lineG.addColorStop(0.5, "pink")
+        // lineG.addColorStop(0.6, "gold")
+        // lineG.addColorStop(1, "skyblue")
+
+        // ctx.fillStyle = lineG 
+        // ctx.fillRect(0, 0, 200, 100)
+
+        // --------------원형
+        ctx.beginPath()
+        // (x1, y1, r1, x2, y2, r2)
+        // 1 : 작은원,  2 : 큰원 작은원에서 큰원으로 번지는 효과 
+        let raG = ctx.createRadialGradient(70, 70, 5, 85, 85, 100)
+        raG.addColorStop(0, "white")
+        raG.addColorStop(0.5, "yellowgreen")
+        raG.addColorStop(1, "green")
+
+        ctx.shadowBlur = 70 // 그림자
+        ctx.shadowOffsetX = 25
+        ctx.shadowOffsetY = 25
+        ctx.shadowColor = "darkgreen"
+
+        ctx.fillStyle = raG
+        ctx.arc(100, 100, 100, 0, Math.PI * 2)
+        ctx.fill()
+    </script>
+</body>
+</html>

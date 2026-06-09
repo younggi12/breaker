@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>텝 버튼</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <style>
         .wrap{
@@ -16,14 +16,15 @@
         }
 
         .menu button{
-            flex: 1;
             height: 50px;
             border: none;
             background-color: #ccc;
             cursor: pointer;
             font-size: 20px;
             padding: 5px 10px;
+            flex: 1;
         }
+
         .menu button.on{
             background-color: #222;
             color: white;
@@ -35,6 +36,7 @@
             border: 1px solid #ddd;
             font-size: 25px;
         }
+
         .content.on{
             display: block;
         }
@@ -46,29 +48,37 @@
             <button class="on">공지사항</button>
             <button>갤러리</button>
             <button>Q&A</button>
+            <button>오시는길</button>
         </div>
 
         <div class="content on">
-            공지사항 내용입니다
+            공지사항 내용입니다.
         </div>
+
         <div class="content">
-            갤러리 내용입니다
+            갤러리 내용입니다.
         </div>
+
         <div class="content">
-            Q&A 내용입니다
-        </div>        
+            Q&A 내용입니다.
+        </div>
+
+        <div class="content">
+            오시는길.
+        </div>
     </div>
 
     <script>
-        // $(".menu button").click(function(){})
         $(".menu button").on("click", function(){
             let idx = $(this).index()
-            $(".menu button").removeClass("on");
+            $(".menu button").removeClass("on")
             $(this).addClass("on")
 
             $(".content").removeClass("on")
             $(".content").eq(idx).addClass("on")
         })
     </script>
+
+    
 </body>
 </html>

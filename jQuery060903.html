@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <title>img fadein, fadeout</title>
+    <link rel="stylesheet" href="./reset.css">
+    <style>
+
+        header {
+            width: 100%;
+            height: 120px;
+            position: fixed;
+            left: 0; top: 0;
+            background-color: white;
+            transition: all 0.4s;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .logo {
+            font-size: 27px;
+            font-weight: 400;
+            position: absolute;
+            left: 270px;
+            top: 28px;
+        }
+
+        .util{
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            right: 400px;
+            top: 40px;
+            gap: 32px;
+            position: absolute;
+        }
+
+        .nav{
+            font-size: 13px;
+            font-weight: bold;
+            left: 270px;
+            top: 90px;
+            display: flex;
+            gap: 23px;
+            position: absolute;
+        }
+
+
+        /* ------------------메인-------------- */
+        .wrap{
+            width: 100%;
+            height: 800px;
+            overflow: hidden;
+            margin-top: 120px; 
+            position: relative;
+        }
+
+        .slide{
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0; top: 0;
+
+            display: none;
+        }
+
+        .slide img{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide:first-child{
+            display: block;
+        }
+        /* 
+            first-child :: 진짜 첫번째
+            first-of-type :: 같은 태그의 첫번째
+
+            nth-child(숫자)   :: 모든 태그 포함 n번쨰
+            nth-of-type(숫자) :: 같은 태그의 n번째 
+        */
+
+        .arrow{
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        .prev{left: 30px; background-color: rgba(255, 255, 255, 0.2); color: white; font-size: 25px;}
+        .next{right: 30px; background-color: rgba(255, 255, 255, 0.2); color: white; font-size: 25px;}
+
+        .dotWrap{
+            display: flex;
+            /* gap: 15px; */
+
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            /* width: 200px;
+            height: 50px;
+            background-color: blue; */
+        }
+        .dot{
+            width: 100px;
+            height: 3px;
+            /* border-radius: 50%; */
+            background-color: gray;
+            opacity: 0.5;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .dot.on{
+            opacity: 1;
+            transform: scale(1.15);
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <header>
+    <!-- 1줄: 로고 + 우측 유틸 -->
+    <div class="header-top">
+        <div class="logo">SIMMONS</div>
+        <div class="util">
+            <a href="#">매장 안내</a>
+            <a href="#">팩토리움 투어 예약</a>
+            <a href="#">회원가입</a>
+            <a href="#">로그인</a>
+            <a href="#">고객센터</a>
+        </div>
+    </div>
+
+    <!-- 2줄: 네비 메뉴 -->
+    <nav class="nav">
+        <a href="#">브랜드 소개</a>
+        <a href="#">전체보기</a>
+        <a href="#">뷰티레스트 블랙</a>
+        <a href="#">뷰티레스트 매트리스</a>
+        <a href="#">프레임</a>
+        <a href="#">협탁</a>
+        <a href="#">파운데이션</a>
+        <a href="#">펫 매트리스</a>
+        <a href="#">베딩</a>
+        <a href="#">프래그런스</a>
+        <a href="#">가구</a>
+        <a href="#">아울렛</a>
+    </nav>
+</header>
+
+    <div class="wrap">
+        <div class="slide">
+            <img src="./iMG/simons1.jpg" alt="img1"/>
+        </div>
+
+        <div class="slide">
+            <img src="./iMG/simons2.jpg" alt="img2"/>
+        </div>
+
+        <div class="slide">
+            <img src="./iMG/simons3.jpg" alt="img3"/>
+        </div>
+
+        <div class="slide">
+            <img src="./iMG/simons4.jpg" alt="img4"/>
+        </div>
+
+        <div class="slide">
+            <img src="./iMG/simons5.jpg" alt="img5"/>
+        </div>
+
+        <!-- 좌우버튼-->
+        <button class="arrow prev">&lt;</button>
+        <button class="arrow next">&gt;</button>
+
+        <!-- 도트 -->
+         <div class="dotWrap">
+            <div class="dot on"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+         </div>
+    </div>
+    <div style="height: 1000px; background: #f5f5f5;"></div>
+
+    <script>
+        const slides =  $(".slide");
+        const dots = $(".dot");
+
+        let index = 0;
+        let slideInterval;
+        let dotsInterval;
+
+        // 공통적으로 쓰이는 슬라이드 이동 함수 
+        function moveSlide(){
+            slides.stop(true, true).fadeOut(700)
+            // stop() :: 현재 진행중인 애니 멈춤 
+            // stop(true) :: 현재 대기중인 애니 삭제 
+            // stop(true, true) :: 현재 대기중인 애니 삭제, 현재 진행중인 애니 삭제 (모두 삭제)
+            slides.eq(index).stop(true, true).fadeIn(700)
+
+            dots.removeClass("on")
+            dots.eq(index).addClass("on")
+        }
+
+        function autoSlide(){
+            slideInterval = setInterval(function(){
+            index++
+            if( index >= slides.length ){
+                index = 0;
+            }
+            moveSlide();
+        }, 3000)
+        }
+
+        //3초다마다 사라지고 나타나고 반복 
+        slideInterval = setInterval(function(){
+            index++
+            if( index >= slides.length ){
+                index = 0;
+            }
+            moveSlide();
+        }, 3000)
+
+        // 다음 버튼 클릭시
+        $(".next").on("click", function(){
+            clearInterval(slideInterval)
+            index++ 
+            if( index >= slides.length ){
+                index = 0;
+            }
+            moveSlide();
+            autoSlide();
+        })
+
+        // 이전 버튼 클릭시 
+        $(".prev").on("click", function(){
+            clearInterval(slideInterval)
+            index-- 
+            if( index < 0 ){
+                index = slides.length - 1; // slides.length :: 총 3개라서 3
+                // 2번째 -> 1번째 -> 0번째 -> 2번째
+            }
+            moveSlide();
+            autoSlide();
+        })
+
+        dots.on("click", function(){
+            clearInterval(slideInterval)
+            index = $(this).index()
+            moveSlide();
+            autoSlide();
+        })
+    </script>
+</body>
+</html>
