@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bubble Animation</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+canvas{
+    display:block;
+}
+</style>
+
 </head>
 <body>
 
@@ -17,6 +30,11 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// 배경 이미지
+const bgImg = new Image();
+bgImg.src = "./img/bu.jpg";
+
+// 버블 배열
 const circles = [];
 
 for(let i = 0; i < 30; i++){
@@ -34,7 +52,19 @@ for(let i = 0; i < 30; i++){
 
 function ani(){
 
-    ctx.fillStyle = "#000";
+    // 배경 이미지
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.drawImage(
+        bgImg,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    // 배경 어둡게
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
     for(let i = 0; i < circles.length; i++){
@@ -45,18 +75,17 @@ function ani(){
         circle.y += circle.speedY;
 
         // 좌우 흔들림
-        circle.x += Math.sin(Date.now()*0.9 + i) * 0.1;
+        circle.x += Math.sin(Date.now()*0.001 + i) * 0.1;
 
         // 크기 변화
         circle.pulse += 0.03;
         let drawR = circle.r + Math.sin(circle.pulse) * 2;
 
-        // ✅ 좌우 벽 충돌 (중복 제거)
+        // 벽 충돌
         if(circle.x + drawR > canvas.width || circle.x - drawR < 0){
             circle.speedX *= -1;
         }
 
-        // ✅ 위아래 벽 충돌 (감쇄 제거)
         if(circle.y + drawR > canvas.height || circle.y - drawR < 0){
             circle.speedY *= -1;
         }
@@ -65,14 +94,16 @@ function ani(){
         ctx.shadowBlur = 20;
         ctx.shadowColor = circle.border;
 
-        // 비눗방울 그라데이션
+        // 그라데이션
         let gradient = ctx.createRadialGradient(
             circle.x - drawR/4,
-            circle.y - drawR/4, 1,
+            circle.y - drawR/4,
+            1,
             circle.x,
             circle.y,
             drawR
         );
+
         gradient.addColorStop(0,"rgba(255,255,255,0.5)");
         gradient.addColorStop(0.6,circle.color);
         gradient.addColorStop(1,"rgba(255,255,255,0.05)");
@@ -93,7 +124,9 @@ function ani(){
         ctx.arc(
             circle.x - drawR/5,
             circle.y - drawR/5,
-            drawR/10, 0, Math.PI * 2
+            drawR/10,
+            0,
+            Math.PI * 2
         );
         ctx.fillStyle = "rgba(255,255,255,0.8)";
         ctx.fill();
@@ -103,7 +136,9 @@ function ani(){
         ctx.arc(
             circle.x + drawR/5,
             circle.y + drawR/5,
-            drawR/60, 0, Math.PI * 2
+            drawR/60,
+            0,
+            Math.PI * 2
         );
         ctx.fillStyle = "rgba(255,255,255,0.4)";
         ctx.fill();
@@ -112,13 +147,18 @@ function ani(){
     requestAnimationFrame(ani);
 }
 
-ani();
+// 이미지 로드 후 시작
+bgImg.onload = function(){
+    ani();
+};
 
+// 창 크기 변경
 window.addEventListener("resize", () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 });
 
 </script>
+
 </body>
 </html>

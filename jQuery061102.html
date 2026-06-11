@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로컬스토리지를 활용한 팝업창</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; }
+
+        /* ========================= */
+        /* header */
+        /* ========================= */
+        header { width: 100%; height: 80px; }
+
+        .nav {
+            position: fixed;
+            left: 0; top: 0;
+            width: 100%; height: 80px;
+            background-color: rgb(238, 236, 236);
+            display: flex;
+            justify-content: start;
+            transition: all 0.3s;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .nav.on { height: 490px; }
+
+        .logo {
+            width: 15%; height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 45px;
+            font-weight: bold;
+            mix-blend-mode: multiply;
+        }
+
+        .gnb {
+            width: 50%; height: 90px;
+            color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            list-style: none;
+        }
+        .gnb > li {
+            width: calc(100% / 4);
+            height: 90px;
+        }
+        .gnb > li > a {
+            width: 100%; height: 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 25px;
+            font-weight: 700;
+            text-decoration: none;
+            color: black;
+            cursor: pointer;
+        }
+        .gnb > li > a:hover { color: #555; }
+
+        .ham {
+            width: 25%; height: 80px;
+            display: flex;
+            align-items: center;
+            padding-bottom: 10px;
+        }
+        .hamspan {
+            width: 18px; height: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            cursor: pointer;
+            margin-left: auto;
+            margin-right: 30px;
+        }
+        .hamspan span {
+            width: 5px; height: 5px;
+            background-color: black;
+            border-radius: 80%;
+            display: block;
+        }
+
+        .snb {
+            color: black;
+            margin-top: 20px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            list-style: none;
+        }
+        .snb li a {
+            text-decoration: none;
+            color: black;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .snb li a:hover { color: #555; }
+
+        /* ========================= */
+        /* page system */
+        /* ========================= */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ========================= */
+        /* HOME main */
+        /* ========================= */
+        .main { width: 100%; position: relative; }
+        .mainImg { width: 100%; height: 900px; position: relative; }
+        .mainImg img {
+            width: 97%; height: 84%;
+            position: absolute;
+            left: 20px; top: 10px;
+            border-radius: 7px;
+        }
+        
+        .main-text {
+            width: 100%; height: 1000px;
+            color: whitesmoke;
+            z-index: 100;
+            position: absolute;
+            left: 0; top: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-size: 30px;
+        }
+        .main-text h1 { font-weight: 100; }
+
+        .modalBg1,
+        .modalBg2{
+            position: fixed;
+            top: 150px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .modalBg1{
+            left: 30px;
+        }
+
+        .modalBg2{
+            left: 335px;
+        }
+
+        .modal1,
+        .modal2{
+            width: 300px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,.2);
+        }
+
+        .modal1 img,
+        .modal2 img{
+            width: 100%;
+            display: block;
+        }
+
+        .btn{
+            display:flex;
+        }
+
+        .btn button{
+            border:none;
+            height:30px;
+            cursor:pointer;
+            font-size:11px;
+            font-weight:bold;
+        }
+
+        .todayClose{
+            width:80%;
+            background:#000;
+            color:#fff;
+        }
+
+        .close{
+            width:20%;
+            background:#111;
+            color:#fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="nav">
+            <div class="logo">
+                <a href="#" onclick="navigate('home'); return false;">
+                    <img src="./img/logo.png" alt="로고" onerror="this.style.display='none'; this.parentElement.textContent='WOODIN';">
+                </a>
+            </div>
+            <ul class="gnb">
+                <li>
+                    <a href="#" onclick="navigate('brand'); return false;">브랜드</a>
+                    <ul class="snb">
+                        <li><a href="#" onclick="navigate('brand-story'); return false;">브랜드스토리</a></li>
+                        <li><a href="#" onclick="navigate('brand-history'); return false;">연혁 및 인증</a></li>
+                        <li><a href="#" onclick="navigate('brand-ci'); return false;">CI 및 BI</a></li>
+                        <li><a href="#" onclick="navigate('brand-location'); return false;">오시는길</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" onclick="navigate('story'); return false;">스토리</a>
+                    <ul class="snb">
+                        <li><a href="#" onclick="navigate('story-media'); return false;">미디어</a></li>
+                        <li><a href="#" onclick="navigate('story-pr'); return false;">홍보</a></li>
+                        <li><a href="#" onclick="navigate('story-sponsor'); return false;">협찬</a></li>
+                        <li><a href="#" onclick="navigate('story-event'); return false;">이벤트</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" onclick="navigate('gallery'); return false;">갤러리</a>
+                    <ul class="snb">
+                        <li><a href="#" onclick="navigate('gallery-collection'); return false;">컬렉션</a></li>
+                        <li><a href="#" onclick="navigate('gallery-interior'); return false;">인테리어</a></li>
+                        <li><a href="#" onclick="navigate('gallery-exterior'); return false;">익스테리어</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" onclick="navigate('showroom'); return false;">쇼룸</a>
+                    <ul class="snb">
+                        <li><a href="#" onclick="navigate('showroom-exhibit'); return false;">전시장</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="ham">
+                <div class="hamspan">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ===== HOME ===== -->
+    <div id="page-home" class="page active">
+        <div class="main">
+            <div class="mainImg">
+                <img src="./img/main.jpg" alt="메인">
+                <div class="main-text">
+                    <h1>CREATING HEALING SPACE IS</h1>
+                    <h1>WOODIN HAUS'S TOP PRIORITY.</h1>
+                </div>
+            </div>
+        </div>
+
+                <div class="modalBg1">
+            <div class="modal1">
+                <img src="./img/modal1.jpg" alt="모달1">
+
+                <div class="btn">
+                    <button class="todayClose">24시간 동안 다시 열람하지 않습니다.</button>
+                    <button class="close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modalBg2">
+            <div class="modal2">
+                <img src="./img/modal2.jpg" alt="모달2">
+
+                <div class="btn">
+                    <button class="todayClose">24시간 동안 다시 열람하지 않습니다.</button>
+                    <button class="close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+            <script>
+
+             $(function () {
+            let today = new Date().toDateString();
+
+            let saveday1 = localStorage.getItem("closeday1");
+            let saveday2 = localStorage.getItem("closeday2");
+
+            if(saveday1 !== today){
+                $(".modalBg1").show();
+            }
+
+            if(saveday2 !== today){
+                $(".modalBg2").show();
+            }
+
+            $(".modalBg1 .todayClose").click(function(){
+                localStorage.setItem("closeday1", today);
+                $(".modalBg1").hide();
+            });
+
+            $(".modalBg2 .todayClose").click(function(){
+                localStorage.setItem("closeday2", today);
+                $(".modalBg2").hide();
+            });
+
+            $(".modalBg1 .close").click(function(){
+                $(".modalBg1").hide();
+            });
+
+            $(".modalBg2 .close").click(function(){
+                $(".modalBg2").hide();
+            });
+
+        });
+        </script>
+
+</body>
+</html>

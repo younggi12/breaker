@@ -3,14 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>CANVAS 벽돌게임</title>
+    <style>
+        body{
+            background-color: #333;
+        }
+        #gameBox{
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas{
+            border: 4px solid white;
+            background-color: #111;
+            
+        }
+        #restartBtn{
+            position: absolute;
+            left: 50%; top:50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            background-color: white;
+            color: #111;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <canvas></canvas>
-    
+    <div id="gameBox">
+        <canvas width="800" height="500"></canvas>
+        <button id="restartBtn">다시 시작</button>
+    </div>
     <script>
+        const canvas = document.querySelector("canvas")
+        const restartBtn = document.getElementById("restartBtn")
+        const ctx = canvas.getContext("2d")
 
+        // 공
+        let ballX;
+        let ballY;
+        let ballR = 10;
+        let ballSpeedX;
+        let ballSpeedY;
+        
+        // 바
+        let barX;
+        let barY = canvas.height - 40 ;
+        let barW = 100;
+        let barH = 15;
+
+        // 벽돌
+        let bricks = []
+        let bricksRow = 3
+        let bricksCol = 6
+        let bricksW = 100;
+        let bricksH = 25;
+        let bricksGap = 15;
+
+        // 게임상태
+        let gameOver;
+        let aniId;
+
+        function startGame(){
+            // 볼의 정보
+            ballX = canvas.width / 2
+            ballY = canvas.height - 60
+            ballSpeedX = 4
+            ballSpeedY = -4
+
+            // 바의 정보
+            barX = canvas.width/2 - barW/2
+
+            // 벽돌 정보
+            bricks = []
+            for(let row = 0; row < bricksRow ; row++){
+                for(let col = 0; col<bricksCol; col++){
+                    bricks.push({
+                        x : 55 + col * (bricksW + bricksGap),
+                        y : 40 + row * (bricksH + bricksGap), 
+                        show : true
+                    })
+                }
+            }
+
+            //상태 정보
+            gameOver = false
+            restartBtn.style.display ="none";
+
+            // 애니메이션 실행
+            animate()
+        }
+
+
+        // 그리기
+        function draw(){
+            ctx.clearRect(0,0, canvas.width, canvas.height)
+
+            // 공
+            ctx.beginPath()
+            ctx.fillStyle = "gold"
+            ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
+            ctx.fill()
+
+            //바
+            ctx.beginPath()
+            ctx.fillStyle = "skyblue"
+            ctx.fillRect(barX, barY, barW, barH)
+            
+            // 벽돌
+            for(let i=0; i<bricks.length; i++){
+                    if(bricks[i].show){
+                        ctx.fillStyle = "tomato"
+                        ctx.fillRect( bricks[i].x, bricks[i].y, bricksW, bricksH)
+                    }
+            }
+        } 
+        
+        // 게임종료
+        function endGame(){
+            gameOver = true;
+            cancelAnimationFrame(aniId)
+
+            ctx.fillStyle = "rgba(0,0,0,0.6)"
+            ctx.fillRect(0,0,canvas.width, canvas.height)
+
+            ctx.fillStyle = "white"
+            ctx.font = "bold 40px sans-serif"
+            ctx.textAlign = "center"
+            ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2)
+
+            restartBtn.style.display = "block"
+        }
+
+        restartBtn.addEventListener("click", function(){
+            startGame()
+        })
+
+        function move(){
+            // 공 기본 좌표 변경 ( 스피드 )
+            ballX += ballSpeedX
+            ballY += ballSpeedY
+
+            // 공이 왼쪽, 오른쪽 벽에 닿았을 때
+            if( ballX + ballR > canvas.width || ballX - ballR < 0){
+                ballSpeedX = ballSpeedX * -1
+            }
+
+            // 공이 위쪽벽에 닿았을 때 
+            if(ballY - ballR < 0 ){
+                 ballSpeedY = ballSpeedY * -1
+            }
+
+            // 공이 바에 닿았을때
+            if( ballY + ballR > barY && 
+                ballX > barX &&
+                ballX < barW + barX
+            ){
+                ballSpeedY = ballSpeedY * -1
+            }
+
+            // 벽돌에 닿았을때
+            for( let i = 0; i <bricks.length; i++){
+                let b = bricks[i]
+                if( b.show &&
+                    ballX > b.x &&
+                    ballX < b.x + bricksW &&
+                    ballY + ballR > b.y &&
+                    ballY - ballR < b.y + bricksH
+                ){
+                    b.show = false;
+                    ballSpeedY = ballSpeedY * -1 
+                }
+            }
+
+            // 공이 바닥으로 떨어지면 게임 종료
+            if(ballY - ballR > canvas.height){
+                endGame()
+            }
+        }
+
+        // 그리고 지우고 그리고 빨리 실행
+        function animate(){
+            if(gameOver) return
+
+            draw()
+            move()
+
+           aniId = requestAnimationFrame(animate)
+        }
+
+        canvas.addEventListener("mousemove", function(e){
+            let rect = canvas.getBoundingClientRect()
+            // 정보제공
+            // { x : x좌표값,
+            //   y : y좌표값,
+            //   w : 위드값,
+            //   h : 하이값,
+            //   top : top위치값,
+            //   left : left위치값,
+            //   ..
+            // }
+            let mouseX = e.clientX - rect.left
+            barX = mouseX - barW/2
+
+            if(barX < 0){
+                barX = 0
+            }
+
+            if(barX + barW > canvas.width){
+                barX = canvas.width-barW
+            }
+        })
+
+        startGame()
     </script>
-    
 </body>
 </html>
