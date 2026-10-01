@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,14 +17,15 @@
 
         #toolbar{
             width: 100%;
-            height: 70px;
+            min-height: 70px;
             background-color: darkblue;
-            /* border-radius: 50%; */
 
             display: flex;
+            flex-wrap: wrap;            /* [추가] 좁은 화면에서 줄바꿈 */
             justify-content: space-around;
             align-items: center;
-            /* gap: 20px; */
+            gap: 10px;
+            padding: 8px 0;
         }
 
         #toolbar div *{
@@ -36,7 +37,7 @@
 
         #toolbar input{
             color : black;
-         }
+        }
 
         #bc{
             color: white;
@@ -49,8 +50,20 @@
             background-color: burlywood;
             border-radius: 50%;
             color: white;
-            /* font-weight: bold; */
             padding: 5px 30px;
+            cursor: pointer;
+        }
+
+        #bc button:disabled{
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        canvas{
+            display: block;
+            background-color: #ffffff;   /* [수정] 기본 배경을 흰색으로 명시 */
+            touch-action: none;          /* [추가] 터치로 그릴 때 화면이 스크롤되지 않게 */
+            cursor: crosshair;
         }
     </style>
 
@@ -61,17 +74,18 @@
         <div id="toolbar">
             <div>
                 <label for="strokeColor">색상</label>
-                <input type="color" id="strokeColor" value="#000" />
-                
+                <input type="color" id="strokeColor" value="#000000" />
 
                 <label for="lwidth">선 굵기</label>
-                <input type="number" id="lwidth" value="2" min="1" max="50" /> 
+                <input type="number" id="lwidth" value="2" min="1" max="50" />
             </div>
 
             <div id="bc">
                 <label for="fillColor">배경색</label>
-                <input type="color" id="fillColor" value="#000"/>
+                <!-- [수정] 기본값을 흰색으로. 검정이면 기본 펜(검정)으로 그린 그림이 다운로드 시 안 보였다 -->
+                <input type="color" id="fillColor" value="#ffffff"/>
 
+                <button id="undo" disabled>되돌리기</button>  <!-- [추가] -->
                 <button id="reset">지우기</button>
                 <button id="downfile">다운로드</button>
             </div>
@@ -85,94 +99,143 @@
         const canvas = document.querySelector("canvas")
         const toolbar = document.getElementById("toolbar")
         const bc = document.getElementById("fillColor")
+        const undoBtn = document.getElementById("undo")
 
         canvas.width = window.innerWidth
-        canvas.height = window.innerHeight - toolbar.offsetHeight; //  offsetHeight height값이 얼마든 뺴줌 
+        canvas.height = window.innerHeight - toolbar.offsetHeight;
 
-        let canvasOffsetY = canvas.offsetTop;
         let isDrawing = false;
         let lineWidth = 2;
 
-        let bgColor = "#000000";
+        // [수정] 화면의 캔버스 배경(흰색)과 같은 값으로 시작
+        let bgColor = "#ffffff";
 
         const ctx = canvas.getContext("2d")
 
         ctx.strokeStyle = "#000000";
 
-        // 선색상, 선굵기 변경 이벤트 
+        // [추가] 되돌리기용 기록 — 한 획을 시작하기 직전의 그림을 저장해 둔다
+        const MAX_HISTORY = 20
+        let history = []
+
+        function saveHistory(){
+            history.push(ctx.getImageData(0, 0, canvas.width, canvas.height))
+            if(history.length > MAX_HISTORY){
+                history.shift()   // 오래된 기록부터 버려 메모리를 아낀다
+            }
+            undoBtn.disabled = false
+        }
+
+        function undo(){
+            if(history.length === 0) return
+            ctx.putImageData(history.pop(), 0, 0)
+            undoBtn.disabled = history.length === 0
+        }
+
+        // [추가] 화면 좌표 → 캔버스 좌표
+        // 기존에는 clientY에서 캔버스 위치만 뺐는데, 스크롤하거나 캔버스 왼쪽에 여백이 생기면 어긋났다
+        function getPos(e){
+            const rect = canvas.getBoundingClientRect()
+            return {
+                x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            }
+        }
+
+        // 선색상, 선굵기 변경 이벤트
         toolbar.addEventListener("change", function(e){
             if(e.target.id === "strokeColor"){
                 ctx.strokeStyle = e.target.value;
             }
-            
+
             if(e.target.id === 'lwidth'){
-                lineWidth = e.target.value;
+                lineWidth = Number(e.target.value);
             }
         })
 
-        canvas.addEventListener("mousedown", function(e){
-            isDrawing = true; 
+        // [수정] mouse 이벤트 → pointer 이벤트
+        // pointer 이벤트 하나로 마우스 · 터치 · 펜을 모두 처리할 수 있어 휴대폰에서도 그려진다
+        canvas.addEventListener("pointerdown", function(e){
+            saveHistory()   // [추가] 그리기 전 상태 저장
+            isDrawing = true;
+            canvas.setPointerCapture(e.pointerId)   // 캔버스 밖으로 나가도 획이 끊기지 않게
 
+            const { x, y } = getPos(e)
             ctx.beginPath();
-            ctx.moveTo(
-                e.clientX,
-                e.clientY - canvasOffsetY
-            );
-        })
+            ctx.moveTo(x, y);
 
-        canvas.addEventListener("mousemove", function(e){
-            if(!isDrawing) return
+            // [추가] 클릭만 해도 점이 찍히게
             ctx.lineWidth = lineWidth
             ctx.lineCap = 'round'
-            ctx.lineTo(e.clientX, e.clientY - canvasOffsetY )
+            ctx.lineTo(x, y)
             ctx.stroke()
         })
 
-        canvas.addEventListener("mouseup", function(e){
-            isDrawing = false
-            ctx.beginPath()
+        canvas.addEventListener("pointermove", function(e){
+            if(!isDrawing) return
+            const { x, y } = getPos(e)
+            ctx.lineWidth = lineWidth
+            ctx.lineCap = 'round'
+            ctx.lineJoin = 'round'
+            ctx.lineTo(x, y)
+            ctx.stroke()
         })
 
-        canvas.addEventListener("mouseleave", function(){
-                isDrawing = false;
-                ctx.beginPath();
-            })
+        function stopDrawing(){
+            isDrawing = false
+            ctx.beginPath()
+        }
 
-        // 지우기 이벤트 
+        canvas.addEventListener("pointerup", stopDrawing)
+        canvas.addEventListener("pointercancel", stopDrawing)
+
+        // 버튼 이벤트 (되돌리기 · 지우기 · 다운로드)
         toolbar.addEventListener("click", function(e){
+            // [추가] 되돌리기
+            if(e.target.id === "undo"){
+                undo()
+            }
+
+            // 지우기
             if(e.target.id === "reset"){
+                saveHistory()   // [추가] 지운 것도 되돌릴 수 있게
                 ctx.clearRect(0, 0, canvas.width, canvas.height)
+            }
+
+            // 캔버스에 그린 그림 다운로드
+            // 캔버스 자체는 투명하고 배경색은 CSS로만 칠해져 있어서,
+            // 임시 캔버스에 배경색을 먼저 칠하고 그 위에 그림을 합쳐서 저장한다
+            if(e.target.id === "downfile"){
+                const tempCanvas = document.createElement("canvas");
+                const tempCtx = tempCanvas.getContext("2d");
+
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+
+                tempCtx.fillStyle = bgColor;
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                tempCtx.drawImage(canvas, 0, 0);
+
+                let link = document.createElement("a");
+                link.download = "drawing.png";
+                link.href = tempCanvas.toDataURL("image/png");
+                link.click();
             }
         })
 
-        // 배경색 변경 
+        // [추가] Ctrl + Z (Mac은 Cmd + Z)로 되돌리기
+        window.addEventListener("keydown", function(e){
+            if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z"){
+                e.preventDefault()
+                undo()
+            }
+        })
+
+        // 배경색 변경
         bc.addEventListener("change", function(){
             bgColor = this.value;
             canvas.style.backgroundColor = bgColor;
-        })
-
-        // 캔버스에 그린 그림 다운로드
-        toolbar.addEventListener("click", function(e){
-            // <a href="#"홈으로</a>
-            // <a href="img/as.jpg" download>다운</a>
-            if(e.target.id === "downfile"){
-
-            const tempCanvas = document.createElement("canvas");
-            const tempCtx = tempCanvas.getContext("2d");
-
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-
-            tempCtx.fillStyle = bgColor;
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-            tempCtx.drawImage(canvas, 0, 0);
-
-            let link = document.createElement("a");
-            link.download = "drawing.png";
-            link.href = tempCanvas.toDataURL("image/png");
-            link.click();
-            }
         })
     </script>
 </body>
