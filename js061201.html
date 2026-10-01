@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,6 @@
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        /* opacity: 0.1; */
     }
 
     #gameBox{
@@ -23,9 +22,9 @@
 
     canvas{
         width: 1000px;
+        max-width: 95vw;   /* [추가] 화면이 좁을 때 캔버스가 넘치지 않게 */
         border: 5px solid darkcyan;
         border-radius: 5%;
-        /* opacity: 0.85; */
         background: transparent;
     }
 
@@ -86,15 +85,9 @@
 
         let bgImg = new Image()
         bgImg.src = "./iMG/game.jpg"
-        
+
         bgImg.onload = function(){
-        ctx.fillStyle = "white"
-        ctx.font = "bold 30px sans-serif"
-        ctx.textAlign = "center"
-        ctx.shadowColor = "cyan"
-        ctx.shadowBlur = 15
-        ctx.shadowBlur = 0
-        startBtn.style.display = "block"
+            startBtn.style.display = "block"
         }
 
         // 공
@@ -103,7 +96,9 @@
         let ballR = 8;
         let ballSpeedX;
         let ballSpeedY;
-        
+        const BALL_SPEED = 5.5        // [추가] 공의 속력(방향이 바뀌어도 이 빠르기는 유지)
+        const MAX_BOUNCE_ANGLE = 60   // [추가] 패들 끝에 맞았을 때 최대로 꺾이는 각도(도)
+
         // 바
         let barX;
         let barY = canvas.height - 40 ;
@@ -122,6 +117,18 @@
         let gameOver;
         let aniId;
 
+        // [추가] 점수 · 목숨
+        const BRICK_SCORE = 10        // 벽돌 하나당 점수
+        const MAX_LIVES = 3
+        let score;
+        let lives;
+
+        // [추가] 서브(발사 대기) 상태
+        // 공을 놓친 뒤 바로 다시 날아가면 반응할 틈이 없으므로,
+        // 잠깐 동안 공이 패들 위에 붙어 따라다니다가 발사된다.
+        const SERVE_FRAMES = 60       // 약 1초(60fps 기준)
+        let serveTimer = 0
+
         let colors = [
             "rgba(0, 128, 0, 0.7)",      // darkgreen 흐리게
             "rgba(0, 0, 255, 0.7)",      // blue 흐리게
@@ -129,15 +136,26 @@
             "rgba(0, 0, 139, 0.7)"       // darkblue 흐리게
         ]
 
-        function startGame(){
-            // 볼의 정보 
-            ballX = canvas.width / 2
-            ballY = barY - 30
-            ballSpeedX = 4
-            ballSpeedY = -4
-
-            // 바의 정보
+        // [추가] 공을 패들 위에 올려두고 발사 대기 상태로 만든다
+        function resetBall(){
             barX = canvas.width/2 - barW/2
+            ballX = barX + barW/2
+            ballY = barY - ballR - 2
+            ballSpeedX = 0
+            ballSpeedY = 0
+            serveTimer = SERVE_FRAMES
+        }
+
+        // [추가] 대기 시간이 끝나면 위쪽으로 발사 (좌우 방향은 랜덤)
+        function launchBall(){
+            const angle = (Math.random() * 40 - 20) * Math.PI / 180   // -20° ~ +20°
+            ballSpeedX = BALL_SPEED * Math.sin(angle)
+            ballSpeedY = -BALL_SPEED * Math.cos(angle)
+        }
+
+        function startGame(){
+            // [수정] 공 · 바 위치 초기화는 resetBall()로 분리
+            resetBall()
 
             // 벽돌 정보
             bricks = []
@@ -145,17 +163,22 @@
                 for(let col = 0; col<bricksCol; col++){
                     bricks.push({
                         x : 55 + col * (bricksW + bricksGap),
-                        y : 40 + row * (bricksH + bricksGap), 
+                        y : 40 + row * (bricksH + bricksGap),
                         show : true,
                         color : colors[ Math.floor(Math.random() * colors.length) ],
-                        num : (row * bricksCol + col) + 1  
+                        num : (row * bricksCol + col) + 1
                     })
                 }
             }
 
             //상태 정보
+            score = 0           // [추가]
+            lives = MAX_LIVES   // [추가]
             gameOver = false
             restartBtn.style.display ="none";
+
+            // [추가] 재시작 시 이전 애니메이션이 남아 두 번 돌지 않도록 정리
+            cancelAnimationFrame(aniId)
 
             // 애니메이션 실행
             animate()
@@ -163,13 +186,13 @@
 
         // 그리기
         function draw(){
-           ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
 
             // 공
             ctx.beginPath()
             ctx.fillStyle = "white"
-            ctx.shadowColor = "cyan"   // ← 추가 (글로우 색상)
-            ctx.shadowBlur = 30        // ← 추가 (글로우 크기)
+            ctx.shadowColor = "cyan"
+            ctx.shadowBlur = 30
             ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
             ctx.fill()
             ctx.shadowBlur = 10
@@ -179,34 +202,53 @@
             ctx.fillStyle = "white"
             ctx.roundRect(barX, barY, barW, barH, 10)
             ctx.fill()
-            
+
             // 벽돌
             for(let i=0; i<bricks.length; i++){
-                    if(bricks[i].show){
-                        ctx.fillStyle = bricks[i].color
-                        ctx.fillRect( bricks[i].x, bricks[i].y, bricksW, bricksH)
-                    }
+                if(bricks[i].show){
+                    ctx.fillStyle = bricks[i].color
+                    ctx.fillRect( bricks[i].x, bricks[i].y, bricksW, bricksH)
+                }
             }
-            ctx.fillStyle = "white"
-            ctx.font = "bold 20px sans-serif"
-            ctx.textAlign = "center"
-            ctx.shadowColor = "cyan"
-            ctx.shadowBlur = 10
-            ctx.shadowBlur = 0
-        } 
 
-        // 게임종료
-        function endGame(){
-            gameOver =true;
+            // [추가] 점수 · 목숨 표시 (HUD)
+            ctx.shadowBlur = 0
+            ctx.fillStyle = "white"
+            ctx.font = "bold 16px sans-serif"
+            ctx.textAlign = "left"
+            ctx.fillText(`SCORE ${score}`, 20, 26)
+            ctx.textAlign = "right"
+            ctx.fillText(`LIFE ${"●".repeat(lives)}${"○".repeat(MAX_LIVES - lives)}`, canvas.width - 20, 26)
+
+            // [추가] 발사 대기 중 안내 문구
+            if(serveTimer > 0){
+                ctx.textAlign = "center"
+                ctx.font = "bold 22px sans-serif"
+                ctx.fillStyle = "cyan"
+                ctx.fillText("READY", canvas.width/2, canvas.height/2 + 60)
+            }
+        }
+
+        // [추가] 성공 · 실패 화면을 하나의 함수로 그린다 (최종 점수 함께 표시)
+        function showResult(message, color){
+            gameOver = true
             cancelAnimationFrame(aniId)
+
+            // [수정] 마지막 프레임을 다시 그린 뒤 오버레이를 덮는다.
+            // 이전에는 마지막 벽돌이 깨지기 "전" 화면 위에 덮어서, 클리어 화면에 벽돌 하나가 남아 보였다.
+            draw()
 
             ctx.fillStyle = "rgba(0, 0, 0, 0.6)"
             ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-            ctx.fillStyle = "orange"
+            ctx.fillStyle = color
             ctx.font = "bold 40px sans-serif"
             ctx.textAlign = "center"
-            ctx.fillText("💀 MISSION FAILED  💀", canvas.width/2, canvas.height/2)
+            ctx.fillText(message, canvas.width/2, canvas.height/2 - 20)
+
+            ctx.fillStyle = "white"
+            ctx.font = "bold 22px sans-serif"
+            ctx.fillText(`SCORE ${score}`, canvas.width/2, canvas.height/2 + 20)
 
             restartBtn.style.display = "block"
         }
@@ -216,31 +258,65 @@
         })
 
         startBtn.addEventListener("click", function(){
-        startBtn.style.display = "none"
-        startGame()
-    })
+            startBtn.style.display = "none"
+            startGame()
+        })
 
         function move(){
+            // [추가] 발사 대기 중에는 공이 패들을 따라다니기만 한다
+            if(serveTimer > 0){
+                ballX = barX + barW/2
+                serveTimer--
+                if(serveTimer === 0){
+                    launchBall()
+                }
+                return
+            }
+
             // 공 기본 좌표 변경(스피드)
             ballX += ballSpeedX
             ballY += ballSpeedY
 
             // 공이 왼쪽, 오른쪽 벽에 닿았을 때
-            if(ballX + ballR > canvas.width || ballX - ballR < 0){
-                ballSpeedX = ballSpeedX* -1
+            // [수정] 벽 안쪽으로 위치를 되돌려서, 벽에 걸쳐 방향이 계속 뒤집히는 현상 방지
+            if(ballX - ballR < 0){
+                ballX = ballR
+                ballSpeedX = Math.abs(ballSpeedX)
+            }
+            if(ballX + ballR > canvas.width){
+                ballX = canvas.width - ballR
+                ballSpeedX = -Math.abs(ballSpeedX)
             }
 
-            // 공이 위쪽벽에 닿았을 때 
+            // 공이 위쪽벽에 닿았을 때
             if(ballY - ballR < 0 ){
-                 ballSpeedY = ballSpeedY * -1
+                ballY = ballR
+                ballSpeedY = Math.abs(ballSpeedY)
             }
 
             // 공이 바에 닿았을때
-            if( ballY + ballR > barY && 
+            // [수정] 1) 공이 "내려오는 중"일 때만 판정 → 패들 안에서 공이 덜덜 떨리며 붙는 현상 방지
+            //        2) 패들 두께 범위 안에 있을 때만 판정
+            //        3) 맞은 위치에 따라 반사 각도를 다르게 (가운데 = 위로 곧게, 끝 = 비스듬히)
+            if( ballSpeedY > 0 &&
+                ballY + ballR >= barY &&
+                ballY - ballR <= barY + barH &&
                 ballX > barX &&
-                ballX < barW + barX
+                ballX < barX + barW
             ){
-                ballSpeedY = ballSpeedY * -1
+                // 패들 중심 기준으로 공이 맞은 위치: 왼쪽 끝 -1 ~ 가운데 0 ~ 오른쪽 끝 +1
+                let hitPos = (ballX - (barX + barW/2)) / (barW/2)
+                hitPos = Math.max(-1, Math.min(1, hitPos))
+
+                // 맞은 위치에 비례해 최대 60°까지 기울인다
+                const angle = hitPos * MAX_BOUNCE_ANGLE * Math.PI / 180
+
+                // 각도만 바꾸고 빠르기(BALL_SPEED)는 그대로 유지
+                ballSpeedX = BALL_SPEED * Math.sin(angle)
+                ballSpeedY = -BALL_SPEED * Math.cos(angle)
+
+                // 패들 위로 올려 같은 프레임에 다시 판정되지 않게
+                ballY = barY - ballR
             }
 
             // 벽돌에 닿았을때
@@ -253,30 +329,31 @@
                     ballY - ballR < b.y + bricksH
                 ){
                     b.show = false;
-                    ballSpeedY = ballSpeedY * -1 
+                    ballSpeedY = ballSpeedY * -1
+                    score += BRICK_SCORE   // [추가]
+
+                    // [수정] 한 프레임에 벽돌 하나만 처리.
+                    // 두 벽돌에 동시에 닿으면 방향이 두 번 뒤집혀 그대로 뚫고 지나가던 문제 방지
+                    break
                 }
             }
 
-            // 공이 바닥으로 떨어지면 게임 종료
+            // 공이 바닥으로 떨어지면
+            // [수정] 바로 게임 종료가 아니라 목숨을 하나 잃고, 남은 목숨이 있으면 다시 서브
             if(ballY - ballR > canvas.height){
-                endGame()
+                lives--
+                if(lives <= 0){
+                    showResult("💀 MISSION FAILED  💀", "orange")
+                } else {
+                    resetBall()
+                }
+                return
             }
 
             // 모든 벽돌 깨졌는지 체크
             let allClear = bricks.every(b => b.show === false)
             if(allClear){
-                gameOver = true
-                cancelAnimationFrame(aniId)
-
-                ctx.fillStyle = "rgba(0, 0, 0, 0.6)"
-                ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-                ctx.fillStyle = "cyan"
-                ctx.font = "bold 40px sans-serif"
-                ctx.textAlign = "center"
-                ctx.fillText("🎉 MISSION CLEAR !!", canvas.width/2, canvas.height/2)
-
-                restartBtn.style.display = "block"
+                showResult("🎉 MISSION CLEAR !!", "cyan")
             }
         }
 
@@ -287,21 +364,18 @@
             draw()
             move()
 
-           aniId = requestAnimationFrame(animate)
+            // [수정] move() 안에서 게임이 끝났으면 다음 프레임을 예약하지 않는다
+            if(gameOver) return
+            aniId = requestAnimationFrame(animate)
         }
 
         canvas.addEventListener("mousemove", function(e){
             let rect = canvas.getBoundingClientRect()
-            // 정보제공
-            // { x : x좌표값,
-            //   y : y좌표값,
-            //   w : 위드값,
-            //   h : 하이값,
-            //   top : top위치값,
-            //   left : left위치값,
-            //   ..
-            // }
-            let mouseX = e.clientX - rect.left
+
+            // [수정] 캔버스 실제 크기(800px)와 화면에 보이는 크기(CSS 1000px)가 달라서
+            // 마우스 좌표를 캔버스 좌표로 바꿀 때 비율을 곱해줘야 패들이 마우스를 정확히 따라온다
+            let scaleX = canvas.width / rect.width
+            let mouseX = (e.clientX - rect.left) * scaleX
             barX = mouseX - barW/2
 
             if(barX < 0){
@@ -311,12 +385,8 @@
             if(barX + barW > canvas.width){
                 barX = canvas.width-barW
             }
-
         })
-
-
-        // startGame()
     </script>
-    
+
 </body>
 </html>
