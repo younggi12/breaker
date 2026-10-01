@@ -101,9 +101,6 @@
         const bc = document.getElementById("fillColor")
         const undoBtn = document.getElementById("undo")
 
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight - toolbar.offsetHeight;
-
         let isDrawing = false;
         let lineWidth = 2;
 
@@ -112,7 +109,10 @@
 
         const ctx = canvas.getContext("2d")
 
-        ctx.strokeStyle = "#000000";
+        // [수정] 펜 색을 변수로 따로 보관
+        // 캔버스 크기를 바꾸면 ctx 설정(strokeStyle 등)이 초기화되기 때문에 다시 적용할 값이 필요하다
+        let strokeColor = "#000000";
+        ctx.strokeStyle = strokeColor;
 
         // [추가] 되돌리기용 기록 — 한 획을 시작하기 직전의 그림을 저장해 둔다
         const MAX_HISTORY = 20
@@ -132,6 +132,36 @@
             undoBtn.disabled = history.length === 0
         }
 
+        // [추가] 창 크기에 맞춰 캔버스 크기 다시 맞추기
+        // 기존에는 페이지를 열 때 한 번만 크기를 정해서, 그 뒤 창을 키우거나
+        // 개발자 도구를 닫으면 캔버스가 화면보다 작게 남아 아래쪽이 그려지지 않았다
+        function resizeCanvas(){
+            const newWidth = window.innerWidth
+            const newHeight = window.innerHeight - toolbar.offsetHeight
+            if(newWidth === canvas.width && newHeight === canvas.height) return
+
+            // 1) 지금까지 그린 그림을 임시 캔버스에 복사해 두고
+            const prev = document.createElement("canvas")
+            prev.width = canvas.width
+            prev.height = canvas.height
+            prev.getContext("2d").drawImage(canvas, 0, 0)
+
+            // 2) 크기를 바꾼 뒤 (이 순간 캔버스 내용과 설정이 모두 지워진다)
+            canvas.width = newWidth
+            canvas.height = newHeight
+
+            // 3) 그림과 펜 색을 다시 적용
+            ctx.drawImage(prev, 0, 0)
+            ctx.strokeStyle = strokeColor
+
+            // 크기가 다른 예전 기록은 되돌리기에 쓸 수 없으므로 비운다
+            history = []
+            undoBtn.disabled = true
+        }
+
+        resizeCanvas()
+        window.addEventListener("resize", resizeCanvas)
+
         // [추가] 화면 좌표 → 캔버스 좌표
         // 기존에는 clientY에서 캔버스 위치만 뺐는데, 스크롤하거나 캔버스 왼쪽에 여백이 생기면 어긋났다
         function getPos(e){
@@ -145,7 +175,8 @@
         // 선색상, 선굵기 변경 이벤트
         toolbar.addEventListener("change", function(e){
             if(e.target.id === "strokeColor"){
-                ctx.strokeStyle = e.target.value;
+                strokeColor = e.target.value;   // [수정] 변수에도 저장
+                ctx.strokeStyle = strokeColor;
             }
 
             if(e.target.id === 'lwidth'){
